@@ -17,17 +17,14 @@ function _log(message) {
 	}
 }
 
-function FirebaseServer(port, name, data) {
+function FirebaseServer(wsOptions, name, data) {
 	this.name = name || 'mock.firebase.server';
 	this.mockFb = new mockfirebase.MockFirebase('https://' + this.name + '/', data);
 	this.mockFb.autoFlush(1);
 
-	this._wss = new WebSocketServer({
-		port: port
-	});
+	this._wss = new WebSocketServer(wsOptions);
 
 	this._wss.on('connection', this.handleConnection.bind(this));
-	_log('Listening for connections on port ' + port);
 }
 
 FirebaseServer.prototype = {
@@ -75,7 +72,11 @@ FirebaseServer.prototype = {
 			if (data === 0) {
 				return;
 			}
-			var parsed = JSON.parse(data);
+      try {
+        var parsed = JSON.parse(data);
+      } catch (e) {
+        return;
+      }
 			if (parsed.t === 'd') {
 				var path;
 				if (typeof parsed.d.b.p !== 'undefined') {
@@ -100,7 +101,7 @@ FirebaseServer.prototype = {
 	},
 
 	close: function() {
-		this._wss.close();
+    this._wss.close();
 	}
 };
 
